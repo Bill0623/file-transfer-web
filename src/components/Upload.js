@@ -6,18 +6,20 @@ function Upload() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
 
-  const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 单个文件最大 10GB
+  const MAX_TOTAL_SIZE = 10 * 1024 * 1024 * 1024; // 文件总大小最大 10GB
 
   // 处理文件选择（单文件、多文件、文件夹）
   const handleFileChange = (e) => {
     setError(''); // 重置错误信息
     const selectedFiles = Array.from(e.target.files);
 
-    // 验证文件大小
-    const invalidFiles = selectedFiles.filter((file) => file.size > MAX_FILE_SIZE);
+    // 计算所有文件的总大小
+    const totalSize = selectedFiles.reduce((acc, file) => acc + file.size, 0);
 
-    if (invalidFiles.length > 0) {
-      setError('部分文件超过 10GB 的限制！');
+    // 验证总大小是否超过 10GB
+    if (totalSize > MAX_TOTAL_SIZE) {
+      setError('文件总大小超过 10GB 的限制！');
+      setFiles([]); // 清空已选择文件
       return;
     }
 
@@ -54,7 +56,7 @@ function Upload() {
 
   return (
     <div style={{ textAlign: 'center', marginTop: '20px' }}>
-      <h2>Upload Files or Folders</h2>
+      <h2>Upload Files</h2>
 
       {/* 单文件上传 */}
       <input
