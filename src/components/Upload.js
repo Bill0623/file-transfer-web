@@ -4,21 +4,32 @@ import Progress from './Progress';
 function Upload() {
   const [files, setFiles] = useState([]);
   const [progress, setProgress] = useState(0);
+  const [error, setError] = useState('');
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 单个文件最大 10GB
+
+  // 处理文件选择（单文件、多文件、文件夹）
   const handleFileChange = (e) => {
+    setError(''); // 重置错误信息
     const selectedFiles = Array.from(e.target.files);
+
+    // 验证文件大小
+    const invalidFiles = selectedFiles.filter((file) => file.size > MAX_FILE_SIZE);
+
+    if (invalidFiles.length > 0) {
+      setError('部分文件超过 10GB 的限制！');
+      return;
+    }
+
     setFiles(selectedFiles);
   };
 
-  const handleUpload = async () => {
+  // 模拟上传进度
+  const handleUpload = () => {
     if (!files.length) return;
 
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('files[]', file);
-    });
+    setProgress(0); // 重置进度
 
-    // 模拟上传进度（实际情况中应调用后端 API）
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
@@ -28,32 +39,62 @@ function Upload() {
         return prev + 10;
       });
     }, 300);
+  };
 
-    // TODO: 将 formData 上传到服务器
-    try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!response.ok) throw new Error('Upload failed');
-
-      console.log('Upload successful');
-    } catch (error) {
-      console.error('Error during upload:', error);
+  // 格式化文件大小为 GB、MB 或 KB
+  const formatFileSize = (size) => {
+    if (size >= 1024 * 1024 * 1024) {
+      return (size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+    } else if (size >= 1024 * 1024) {
+      return (size / (1024 * 1024)).toFixed(2) + ' MB';
+    } else {
+      return (size / 1024).toFixed(2) + ' KB';
     }
   };
 
   return (
-    <div style={{ textAlign: 'center' }}>
+    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+      <h2>Upload Files or Folders</h2>
+
+      {/* 单文件上传 */}
       <input
         type="file"
-        webkitdirectory="true"
-        multiple
         onChange={handleFileChange}
-        style={{ marginBottom: '10px' }}
+        style={{ display: 'block', margin: '10px auto' }}
       />
-      <button onClick={handleUpload}>Upload Folder</button>
+
+      {/* 多文件和文件夹上传 */}
+      <input
+        type="file"
+        multiple
+        webkitdirectory="true"
+        onChange={handleFileChange}
+        style={{ display: 'block', margin: '10px auto' }}
+      />
+
+      <button onClick={handleUpload} disabled={!files.length}>
+        Upload
+      </button>
+
       <Progress progress={progress} />
+
+      {/* 错误提示 */}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      {/* 文件信息展示 */}
+      {files.length > 0 && (
+        <div style={{ marginTop: '20px', textAlign: 'left' }}>
+          <h3>Selected Files:</h3>
+          <ul>
+            {files.map((file, index) => (
+              <li key={index}>
+                {file.name} - {formatFileSize(file.size)}
+              </li>
+            ))}
+          </ul>
+          <p>Total Files: {files.length}</p>
+        </div>
+      )}
     </div>
   );
 }
